@@ -1,0 +1,47 @@
+
+name: Build FloatingAIStarter APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'FloatingAIStarter_v17.6.zip'
+      - '.github/workflows/main.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      - name: Extract project ZIP
+        run: |
+          mkdir -p source
+          unzip -o FloatingAIStarter_v17.6.zip -d source
+          find source -name settings.gradle -o -name settings.gradle.kts
+
+      - name: Build debug APK
+        run: |
+          cd source
+          PROJECT_DIR=$(find . -name settings.gradle -o -name settings.gradle.kts | head -n 1 | xargs dirname)
+          cd "$PROJECT_DIR"
+          gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FloatingAIStarter-v17.6-APK
+          path: source/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          
